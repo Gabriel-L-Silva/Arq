@@ -1,20 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "func.h"
-/*	
-	jump opcode == 000010;
-'	jal  opcode == 000011;
-*/
+
 typedef char String[32];
 int main(int argc, const char *argv[]){	
-	unsigned int mem[1024*4] = {0};
-	unsigned int *PC = mem;
-	unsigned int mascara;
-	unsigned int inst;
-	unsigned int opcode;
-	char rs,rt,rd,shamt,funct;
+	int mem[1024*4] = {0};
+	int bancoReg[32] = {0};
+	int PC = 0;
+	int mascara;
+	int inst;
+	int opcode;
+	int rs,rt,rd,shamt,funct;
 	int immediate;
-	char tipo;
+	int EXIT = 0;
+	int HI = 0,LO = 0;
 //	int bancoReg[32] = {0};
 
 //Confere se o numero de argumentos está correto
@@ -30,11 +29,14 @@ int main(int argc, const char *argv[]){
 	ledata(argv,mem);
 //	Fim Leitura
 //	Inicio Decode
-	while(*PC != 0){
-		inst = *PC;
+	while(EXIT == 0){
+		inst = mem[PC];
+		printf("	%d 		%08x\n", PC,inst);
 		mascara = 0xfc000000;
 		opcode  = (inst & mascara) >> 26;
-		if(opcode == 0){
+		if(inst == 0xc){
+			syscall(bancoReg,&EXIT);
+		}else if(opcode == 0){
 			mascara = 0x3e00000;
 			rs = (inst & mascara) >> 21;
 			rt = (inst & (mascara >> 5)) >> 16;
@@ -42,8 +44,7 @@ int main(int argc, const char *argv[]){
 			shamt = (inst & (mascara >> 15)) >> 6;
 			mascara = 0x3f;
 			funct = (inst & mascara);
-			printf("Tipo R:\n");
-			printf("%08x	%08x	%08x	%08x	%08x\n", rs,rt,rd,shamt,funct);
+			tipoR(bancoReg, rs, rt, rd, shamt, funct,&HI,&LO,&PC);
 		}
 		else if(opcode != 0x10 && opcode != 0x11){
 			mascara = 0x3e00000;
@@ -51,12 +52,16 @@ int main(int argc, const char *argv[]){
 			rt = (inst & (mascara >> 5)) >> 16;
 			mascara = 0x0000ffff;
 			immediate = (inst & mascara);
-			printf("Tipo I:\n");
-			printf("%08x	%08x	%08x\n", rs,rt,immediate);
+			tipoI(bancoReg, opcode, rs, rt, immediate);
 		}else{
 			immediate = inst >> 6;
+			tipoJ(mem,bancoReg, opcode, immediate, &PC);
 		}
 		PC++;
+	}
+	for (int i = 0; i < 32; ++i)
+	{
+		printf("%08x\n", bancoReg[i]);
 	}
 	return 0;
 }
