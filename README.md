@@ -1,2 +1,2 @@
 # Arq
-MIPS emulator
+32bit MIPS emulator
